@@ -62,6 +62,9 @@ export default function App() {
 
   const startCamera = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("브라우저에서 카메라 API를 지원하지 않거나 권한이 없습니다.");
+      }
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
       });
@@ -71,7 +74,8 @@ export default function App() {
       }
       setStep('camera');
     } catch (err: any) {
-      alert('카메라를 시작할 수 없습니다. 권한을 확인하거나 파일 업로드를 사용해주세요.');
+      console.error("Camera error:", err);
+      alert(`카메라를 시작할 수 없습니다: ${err.message || '알 수 없는 오류'}\n권한을 확인하거나 파일 업로드를 사용해주세요.`);
     }
   };
 
