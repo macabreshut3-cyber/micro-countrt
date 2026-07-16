@@ -64,22 +64,28 @@ Respond in Korean.
 `;
       }
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: {
-          parts: [
-            {
-              inlineData: {
-                data: base64Data,
-                mimeType: "image/jpeg",
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: {
+            parts: [
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: "image/jpeg",
+                },
               },
-            },
-            {
-              text: prompt,
-            },
-          ],
-        },
-      });
+              {
+                text: prompt,
+              },
+            ],
+          },
+        });
+      } catch (genError: any) {
+        console.warn("Gemini API generation failed:", genError.message);
+        return res.json({ analysis: "AI 품질 검증 서버 트래픽이 초과되었거나 응답할 수 없습니다. 수동으로 품질을 확인해주세요." });
+      }
 
       res.json({ analysis: response.text });
     } catch (error: any) {
