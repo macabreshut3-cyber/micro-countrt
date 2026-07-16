@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, RefreshCcw, Loader2, ArrowLeft, ImagePlus } from 'lucide-react';
 import { getCv } from './opencvUtils';
 import { v4 as uuidv4 } from 'uuid';
+import { PlateCalibration } from './components/PlateCalibration';
 
 type MediumType = 'YPD' | 'MRS';
 type ColonyClass = 'yeast' | 'lactobacillus' | 'bacillus' | 'uncertain';
@@ -15,7 +16,7 @@ interface ColonyData {
 }
 
 export default function App() {
-  const [step, setStep] = useState<'home' | 'camera' | 'processing' | 'result'>('home');
+  const [step, setStep] = useState<'home' | 'camera' | 'calibration' | 'processing' | 'result'>('home');
   const [medium, setMedium] = useState<MediumType>('YPD');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [colonies, setColonies] = useState<ColonyData[]>([]);
@@ -65,9 +66,17 @@ export default function App() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("브라우저에서 카메라 API를 지원하지 않거나 권한이 없습니다.");
       }
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
+      
+      let mediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+      } catch (e) {
+        // Fallback for browsers that don't support facingMode or high res well
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+      
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -75,7 +84,7 @@ export default function App() {
       setStep('camera');
     } catch (err: any) {
       console.error("Camera error:", err);
-      alert(`카메라를 시작할 수 없습니다: ${err.message || '알 수 없는 오류'}\n권한을 확인하거나 파일 업로드를 사용해주세요.`);
+      alert(`카메라를 시작할 수 없습니다: ${err.message || '알 수 없는 오류'}\n권한을 확인하거나 앱을 새 탭에서 열어주세요. 파일 업로드 기능도 사용 가능합니다.`);
     }
   };
 
@@ -97,7 +106,8 @@ export default function App() {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         stopCamera();
-        processImage(dataUrl);
+        setImageSrc(dataUrl);
+        setStep('calibration');
       }
     }
   };
@@ -108,11 +118,16 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          processImage(event.target.result as string);
+          setImageSrc(event.target.result as string);
+          setStep('calibration');
         }
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCalibrationConfirm = (croppedBase64: string) => {
+    processImage(croppedBase64);
   };
 
   const processImage = async (src: string) => {
@@ -196,7 +211,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm font-semibold text-blue-600">
-            {step === 'home' ? '대기 중' : step === 'camera' ? '촬영 중' : step === 'processing' ? '분석 중' : '결과'}
+            {step === 'home' ? '대기 중' : step === 'camera' ? '촬영 중' : step === 'calibration' ? '영역 설정' : step === 'processing' ? '분석 중' : '결과'}
           </div>
         </div>
       </header>
@@ -259,6 +274,17 @@ export default function App() {
                 </button>
               </div>
             </div>
+          )}
+
+          {step === 'calibration' && imageSrc && (
+            <PlateCalibration 
+              imageSrc={imageSrc}
+              onConfirm={handleCalibrationConfirm}
+              onBack={() => {
+                setImageSrc(null);
+                setStep('home');
+              }}
+            />
           )}
 
           {step === 'processing' && (
