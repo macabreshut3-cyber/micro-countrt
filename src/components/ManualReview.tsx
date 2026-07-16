@@ -1,21 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ColonyData, SampleData } from '../types';
+import { ColonyData, MediumType } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { MousePointer2, PlusCircle, Trash2, Undo2, ArrowRight } from 'lucide-react';
 
 interface Props {
   imageSrc: string;
   initialColonies: ColonyData[];
-  sampleData: SampleData;
+  medium: MediumType;
   aiAnalysis: string;
   onFinish: (finalColonies: ColonyData[]) => void;
 }
 
-export function ManualReview({ imageSrc, initialColonies, sampleData, aiAnalysis, onFinish }: Props) {
+export function ManualReview({ imageSrc, initialColonies, medium, aiAnalysis, onFinish }: Props) {
   const [colonies, setColonies] = useState<ColonyData[]>(initialColonies);
   const [history, setHistory] = useState<ColonyData[][]>([initialColonies]);
   const [mode, setMode] = useState<'select' | 'add' | 'delete'>('select');
-  const [selectedClass, setSelectedClass] = useState<string>(sampleData.medium === 'YPD' ? 'yeast' : 'lactobacillus');
+  const [selectedClass, setSelectedClass] = useState<string>(medium === 'YPD' ? 'yeast' : 'lactobacillus');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const pushHistory = (newColonies: ColonyData[]) => {
@@ -118,7 +118,7 @@ export function ManualReview({ imageSrc, initialColonies, sampleData, aiAnalysis
             <Undo2 size={14}/>
           </button>
           <select value={selectedClass} onChange={(e)=>setSelectedClass(e.target.value)} className="px-2 bg-black/60 backdrop-blur border border-white/20 rounded text-white text-xs font-medium focus:outline-none">
-            {sampleData.medium === 'YPD' ? (
+            {medium === 'YPD' ? (
               <>
                 <option value="yeast">Yeast</option>
                 <option value="uncertain">Uncertain</option>
@@ -162,7 +162,7 @@ export function ManualReview({ imageSrc, initialColonies, sampleData, aiAnalysis
           </div>
           
           <div className="mt-4 space-y-2">
-            {sampleData.medium === 'YPD' ? (
+            {medium === 'YPD' ? (
               <>
                 <div className="flex justify-between text-xs"><span className="text-slate-500">Yeast</span><span className="font-bold">{colonies.filter(c=>c.class==='yeast').length}</span></div>
                 <div className="flex justify-between text-xs"><span className="text-slate-500">Uncertain</span><span className="font-bold text-amber-500">{colonies.filter(c=>c.class==='uncertain').length}</span></div>

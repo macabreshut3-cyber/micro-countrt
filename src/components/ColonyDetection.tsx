@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { getCv } from '../opencvUtils';
-import { ColonyData, SampleData } from '../types';
+import { ColonyData, MediumType } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { Loader2 } from 'lucide-react';
 
 interface Props {
   imageSrc: string;
-  sampleData: SampleData;
+  medium: MediumType;
   onComplete: (colonies: ColonyData[], aiAnalysis: string) => void;
   onError: (msg: string) => void;
 }
 
-export function ColonyDetection({ imageSrc, sampleData, onComplete, onError }: Props) {
+export function ColonyDetection({ imageSrc, medium, onComplete, onError }: Props) {
   const [status, setStatus] = useState('OpenCV 초기화 중...');
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export function ColonyDetection({ imageSrc, sampleData, onComplete, onError }: P
         // Thresholding
         const thresh = new cv.Mat();
         // Since colonies could be lighter or darker depending on medium
-        if (sampleData.medium === 'MRS') {
+        if (medium === 'MRS') {
           // MRS is blue, colonies might be white/cream
           cv.threshold(gray, thresh, 150, 255, cv.THRESH_BINARY);
         } else {
@@ -60,8 +60,8 @@ export function ColonyDetection({ imageSrc, sampleData, onComplete, onError }: P
           if (area > 10 && area < 5000) {
             const circle = cv.minEnclosingCircle(contour);
             // Basic classification logic based on medium
-            let cls = sampleData.medium === 'YPD' ? 'yeast' : 'uncertain';
-            if (sampleData.medium === 'MRS') {
+            let cls = medium === 'YPD' ? 'yeast' : 'uncertain';
+            if (medium === 'MRS') {
               cls = area > 100 ? 'lactobacillus' : 'bacillus'; // Dummy logic for default
             }
 
@@ -91,7 +91,7 @@ export function ColonyDetection({ imageSrc, sampleData, onComplete, onError }: P
         const response = await fetch('/api/gemini/qc', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: imageSrc, mode: sampleData.medium })
+          body: JSON.stringify({ image: imageSrc, mode: medium })
         });
         
         if (!response.ok) {

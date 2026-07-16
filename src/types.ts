@@ -1,20 +1,6 @@
 export type MediumType = "YPD" | "MRS";
 export type ColonyClass = "yeast" | "lactobacillus" | "bacillus" | "uncertain";
 
-export interface SampleData {
-  id: string;
-  sampleId: string;
-  productName: string;
-  samplingDate: string;
-  analyst: string;
-  medium: MediumType;
-  dilutionFactor: number;
-  platedVolume: number;
-  incubationTemperature: number;
-  incubationTime: number;
-  memo: string;
-}
-
 export interface ColonyData {
   id: string;
   x: number;
@@ -28,11 +14,12 @@ export interface ColonyData {
 }
 
 export interface AppState {
-  step: "form" | "camera" | "calibration" | "detection" | "review" | "result";
-  sampleData: SampleData | null;
+  step: "start" | "camera" | "calibration" | "detection" | "review" | "result";
+  medium: MediumType | null;
   rawImageSrc: string | null;
   calibratedImageSrc: string | null; // Cropped & adjusted
   colonies: ColonyData[];
   aiAnalysisText: string | null;
   qcWarnings: string[];
 }
+
